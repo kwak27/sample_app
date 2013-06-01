@@ -1,4 +1,5 @@
 class UsersController < ApplicationController
+  before_filter :non_signed_in_user, only: [:new, :create]
   before_filter :signed_in_user, only: [:edit, :update, :index]
   before_filter :correct_user, only: [:edit, :update]
   before_filter :admin_user, only: :destroy
@@ -8,7 +9,11 @@ class UsersController < ApplicationController
 	end
 
   def new
-  	@user = User.new
+    if !@user.blank?
+      redirect_to root_path
+  	else
+      @user = User.new
+    end
   end
 
   def edit
@@ -25,14 +30,18 @@ class UsersController < ApplicationController
   end
 
   def create
-  	@user = User.new(params[:user])
-  	if @user.save
-      sign_in @user
-  		flash[:success] = "Welcome to Twitter.ly!"
-  		redirect_to @user
-  	else
-  		render 'new'
-  	end
+    if !@user.blank?
+      redirect_to root_path
+    else
+    	@user = User.new(params[:user])
+    	if @user.save
+        sign_in @user
+    		flash[:success] = "Welcome to Twitter.ly!"
+    		redirect_to @user
+    	else
+    		render 'new'
+    	end
+    end
   end
 
   def index
@@ -40,15 +49,26 @@ class UsersController < ApplicationController
   end
 
   def destroy
-    User.find(params[:id]).destroy
-    flash[:success] = "User destroyed."
-    redirect_to users_url
+    if User.find(params[:id]) == current_user
+      redirect_to root_path
+    else
+      User.find(params[:id]).destroy
+      flash[:success] = "User destroyed."
+      redirect_to users_url
+    end
   end
 
   private
+
+    def non_signed_in_user
+      redirect_to(root_path) unless current_user.blank?
+    end
+
     def signed_in_user
-      store_location
-      redirect_to signin_url, notice: "Please sign in." unless signed_in?
+      unless signed_in?
+        store_location
+        redirect_to signin_url, notice: "Please sign in."
+      end
     end
 
     def correct_user
