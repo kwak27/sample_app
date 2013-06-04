@@ -16,6 +16,10 @@ module SessionsHelper
 		end
 	end
 
+  def non_signed_in_user
+    redirect_to(root_path) unless current_user.blank?
+  end
+
 	def current_user=(user)
 		@current_user = user
 	end
